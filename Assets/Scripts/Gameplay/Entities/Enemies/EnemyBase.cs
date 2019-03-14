@@ -65,6 +65,7 @@ public class EnemyBase : EntityBase
 
     public void FindPath(int gridID)
     {
+        path.Clear();
         Debug.Log(gridID);
         GridGenerator.Instance.CalculateRoute(gameObject, GridGenerator.Instance.GridIDToGridPos(gridID));
         targetGridID = gridID;
@@ -100,14 +101,12 @@ public class EnemyBase : EntityBase
     {
         if (path.Count > 0 && enemiesInRange.Count <= 0)
         {
-            FindPath(targetGridID);
-            if (path.Count <= 0)
-                return;
+            //FindPath(targetGridID);
             Vector3 targetMovePosition = GridGenerator.Instance.GridIDToPosition(path[path.Count - 1]);
             Vector3 moveDir = (targetMovePosition - transform.position).normalized;
             moveDir.y = 0;
             transform.position += moveDir * 1 * Time.deltaTime;
-            if (Vector3.Distance(targetMovePosition,transform.position) < GridGenerator.Instance.singleGridSize*0.5f)
+            if (Vector3.Distance(targetMovePosition,transform.position) < GridGenerator.Instance.singleGridSize)
             {
                 path.RemoveAt(path.Count - 1);
             }

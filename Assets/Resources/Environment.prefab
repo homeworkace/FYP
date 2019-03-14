@@ -125,8 +125,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   tilePrefab: {fileID: 8660630385313664367, guid: cc6953cc01d2dfb41ba42602642fb82d,
     type: 3}
-  xGridAmount: 20
-  zGridAmount: 20
+  xGridAmount: 70
+  zGridAmount: 50
   singleGridSize: 0.1
   grid: []
 --- !u!1 &7681445080718785199

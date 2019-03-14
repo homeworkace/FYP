@@ -199,6 +199,7 @@ public class GridGenerator : MonoBehaviour {
             gScore.Add(float.MaxValue);
         }
 
+
         gScore[GridPosToGridID(enemy.gridPos)] = 0;
         
 

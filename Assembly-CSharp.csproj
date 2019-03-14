@@ -200,6 +200,7 @@
     <Compile Include="Assets\Scripts\TestCameraImage.cs" />
     <Compile Include="Assets\Scripts\UIs\HUD\HUD_Manager.cs" />
     <Compile Include="Assets\Scripts\UIs\HUD\Pop_Up_Panel_Manager.cs" />
+    <Compile Include="Assets\Scripts\UIs\HUD\Squads_Manager.cs" />
     <Compile Include="Assets\Scripts\UX\FadePlaneOnBoundaryChange.cs" />
     <Compile Include="Assets\Scripts\UX\UIManager.cs" />
     <None Include="Assets\Photon\PhotonUnityNetworking\link.xml" />
