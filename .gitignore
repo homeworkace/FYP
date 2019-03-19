@@ -50,7 +50,6 @@ artifacts/
 *_i.h
 *.ilk
 *.meta
-*.obj
 *.pch
 *.pdb
 *.pgc
@@ -260,6 +259,9 @@ paket-files/
 __pycache__/
 *.pyc
 
-Temp/
 Library/
 obj/
+Packages/
+ProjectSettings/
+Temp/
+.collabignore
