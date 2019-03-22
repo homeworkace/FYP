@@ -33,16 +33,16 @@ public class NetworkLobby : MonoBehaviourPunCallbacks
     // Start is called before the first frame update
     void Start()
     {
-        PhotonNetwork.OfflineMode = true;
-        //PhotonNetwork.ConnectUsingSettings();
+        //PhotonNetwork.OfflineMode = true;
+        PhotonNetwork.ConnectUsingSettings();
     }
 
     public override void OnConnectedToMaster()
     {
         LoadingObject.SetActive(false);
         ConnectingText.gameObject.SetActive(false);
-        //PhotonNetwork.JoinLobby();
-        PhotonNetwork.LoadLevel("GameScene");
+        PhotonNetwork.JoinLobby();
+        //PhotonNetwork.LoadLevel("GameScene");
         LobbyUI.SetActive(true);
     }
 

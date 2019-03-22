@@ -5,7 +5,6 @@ using UnityEngine;
 public class GridGenerator : MonoBehaviour {
 
     public static GridGenerator Instance;
-    public GameObject tilePrefab;
     public float singleGridSize;
     Transform enemiesInEnvironment;
     Transform gridsInEnvironment;

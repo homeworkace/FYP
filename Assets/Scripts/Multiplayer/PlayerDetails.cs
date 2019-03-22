@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using Photon.Pun;
+using UnityEngine.EventSystems;
 using Photon.Realtime;
 using UnityEngine.UI;
 using UnityEngine.AI;
@@ -26,7 +27,8 @@ public class PlayerDetails : MonoBehaviour
     [Header("Player Detail Variables")]
     public FACTION faction;
     public CLICKSTATE currClickState;
-    int money;
+    public int money;
+    public int evolve_points;
     Transform enemiesInEnvironment;
     Transform buildingsInEnvironment;
     PhotonView view;
@@ -47,17 +49,27 @@ public class PlayerDetails : MonoBehaviour
     private Vector3 boxStart, boxFinish;
     private GameObject towerGhost = null;
     private RaycastHit towerGhostHitInfo;
+    private EventSystem es;
+
+    public Material canPlaceMaterial;
+    public Material cannotPlaceMaterial;
+    private bool spawnedBase = false;
+
+    public string buildingType = "";
+
+    private float resourceHarverstTimer = 0;
+    public int harvestAmount = 0;
 
     // Start is called before the first frame update
     void Start()
     {
         view = GetComponent<PhotonView>();
-        faction = FACTION.BLUE;
+        object[] data = view.InstantiationData;
+        faction = (FACTION)data[0];
+
+        es = GameObject.Find("EventSystem").GetComponent<EventSystem>();
         currClickState = CLICKSTATE.UNITCONTROL_MODE;
-        
         money = 1000;
-        if (view.Owner != null)
-            faction += view.Owner.ActorNumber-1;
     }
 
     // Update is called once per frame
@@ -72,13 +84,14 @@ public class PlayerDetails : MonoBehaviour
             return;
         }
         
-        if (view.IsMine && GameManager.Instance.gameStart == false)
+        if (view.IsMine && GameManager.Instance.gameStart == false && spawnedBase == false)
         {
             if (SpawnGhostStructure(GameManager.Instance.basePrefab))
             {
                 Vector3 finalPos = towerGhostHitInfo.point;
                 finalPos.y += GameManager.Instance.basePrefab.transform.localScale.y * 0.5f;
-                GameManager.Instance.SpawnBuilding("Base",GridGenerator.Instance.PositionSnapToGrid(finalPos));
+                GameManager.Instance.SpawnBuilding("Base",GridGenerator.Instance.PositionSnapToGrid(finalPos),faction);
+                spawnedBase = true;
             }
         }
 
@@ -87,13 +100,8 @@ public class PlayerDetails : MonoBehaviour
             switch (currClickState)
             {
                 case CLICKSTATE.UNITCONTROL_MODE:
-                    {
-                        // Select
-                        if (selectedUnits.Count <= 0)
-                        DraggingUpdate();
-
-                        
-
+                    
+{
                         // Move 
                         if (Input.GetKeyUp(KeyCode.Mouse0) && selectedUnits.Count > 0)
                         {
@@ -103,71 +111,111 @@ public class PlayerDetails : MonoBehaviour
 
                             if (Physics.Raycast(ray, out hitInfo))
                             {
-                                EnemyBase leaderEnemy = null;
-                                float lowestCost = float.MaxValue;
-                                NavMeshPath path;
-
-                                foreach (EnemyBase enemy in selectedUnits)
+                                if (!es.IsPointerOverGameObject())
                                 {
-                                    path = new NavMeshPath();
-                                    enemy.agent.CalculatePath(hitInfo.point,path);
-                                    if (path.status != NavMeshPathStatus.PathInvalid)
+                                    EnemyBase leaderEnemy = null;
+                                    float lowestCost = float.MaxValue;
+                                    NavMeshPath path;
+
+                                    foreach (EnemyBase enemy in selectedUnits)
                                     {
-                                        enemy.agent.SetDestination(hitInfo.point);
-                                        enemy.agent.isStopped = false;
-                                        if (enemy.agent.remainingDistance < lowestCost)
+                                        if (!enemy)
+                                            continue;
+                                        if (hitInfo.transform.GetComponent<EntityBase>() && hitInfo.transform.GetComponent<EntityBase>().faction != faction)
                                         {
-                                            lowestCost = enemy.agent.remainingDistance;
-                                            leaderEnemy = enemy;
+                                            enemy.targetEntity = hitInfo.transform.GetComponent<EntityBase>();
+                                            enemy.agent.SetDestination(enemy.targetEntity.transform.position);
+                                            enemy.agent.isStopped = false;
+                                        }
+                                        else
+                                        {
+                                            path = new NavMeshPath();
+                                            enemy.agent.CalculatePath(hitInfo.point, path);
+                                            if (path.status != NavMeshPathStatus.PathInvalid)
+                                            {
+                                                enemy.agent.SetDestination(hitInfo.point);
+                                                enemy.agent.isStopped = false;
+                                                if (enemy.agent.remainingDistance < lowestCost)
+                                                {
+                                                    lowestCost = enemy.agent.remainingDistance;
+                                                    leaderEnemy = enemy;
+                                                }
+                                            }
+                                            enemy.targetEntity = null;
                                         }
                                     }
-                                }
-                                Debug.Log(leaderEnemy);
+                                    Debug.Log(leaderEnemy);
 
-                                Debug.Log("Find Path");
+                                    Debug.Log("Find Path");
+                                }
                             }
                             else
                             {
-                                DeleteSelectedEnemies();
+                                if (!es.IsPointerOverGameObject())
+                                    DeleteSelectedEnemies();
                             }
                             
                         }
+                        // Select
+                        if (selectedUnits.Count <= 0)
+                            DraggingUpdate();
                     }
                     break;
                 case CLICKSTATE.PLACE_MODE:
                     {
-                        // Place State
-                        if (SpawnGhostStructure(GameManager.Instance.basicTowerPrefab))
+                        GameObject towerPrefab = null;
+                        switch (buildingType)
                         {
-                            if (Input.GetKeyUp(KeyCode.Mouse0))
+                            case "Barricade":
+                                towerPrefab = GameManager.Instance.barricadePrefab;
+                                break;
+                            case "Harvester":
+                                towerPrefab = GameManager.Instance.harversterPrefab;
+                                break;
+                            case "Turret":
+                                towerPrefab = GameManager.Instance.turretPrefab;
+                                break;
+                        }
+                        // Place State
+                        if (SpawnGhostStructure(towerPrefab))
+                        {
+                            if (Input.GetKeyUp(KeyCode.Mouse0) && !es.IsPointerOverGameObject())
                             {
                                 Vector3 finalPos = towerGhostHitInfo.point;
-                                finalPos.y += GameManager.Instance.basicTowerPrefab.transform.localScale.y * 0.5f;
-                                GameManager.Instance.SpawnBuilding("BasicBuilding",GridGenerator.Instance.PositionSnapToGrid(finalPos));
+                                finalPos.y += towerPrefab.transform.localScale.y * 0.5f;
+                                GameManager.Instance.SpawnBuilding(buildingType,GridGenerator.Instance.PositionSnapToGrid(finalPos),faction);
                                 currClickState = CLICKSTATE.UNITCONTROL_MODE;
                             }
                         }
                     }
                     break;
             }
-
-            if (Input.GetKeyUp(KeyCode.Q))
-            {
-                currClickState = CLICKSTATE.PLACE_MODE;
-            }
-
-            if (Input.GetKeyUp(KeyCode.W))
-            {
-                Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
-                RaycastHit hitInfo;
-                Physics.Raycast(ray, out hitInfo, LayerMask.GetMask("Tile"));
-                Vector3 spawnPos = hitInfo.point;
-                if (hitInfo.transform != null)
-                    GameManager.Instance.SpawnSoldier(spawnPos, faction);
-            }
+            UpdateResources();
         }       
     }
 
+    void UpdateResources()
+    {
+        int harvesters = 0;
+        foreach (GameObject harvester in GameObject.FindGameObjectsWithTag("Structure"))
+        {
+            if (harvester.GetComponent<StructureBase>().faction != faction)
+                continue;
+
+            if (harvester.GetComponent<StructureBase>().type != STRUCTURE_TYPE.HARVESTER)
+                continue;
+
+            harvesters += 1;
+        }
+
+        resourceHarverstTimer += Time.deltaTime;
+        if (resourceHarverstTimer >= 1.0f)
+        {
+            harvestAmount = 5 + (harvesters * 10);
+            money += harvestAmount;
+            resourceHarverstTimer = 0;
+        }
+    }
 
     //DRAGGING
     void DraggingUpdate()
@@ -275,16 +323,20 @@ public class PlayerDetails : MonoBehaviour
     //DRAGGING
     public bool SpawnGhostStructure(GameObject prefab)
     {
+        int layer = (1 << LayerMask.NameToLayer("Terrain"));
         Vector3 halfPrefabHeight = Vector3.zero;
         halfPrefabHeight.y = prefab.transform.localScale.y * 0.5f;
         if (towerGhost == null)
         {
             Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
-            Physics.Raycast(ray, out towerGhostHitInfo, LayerMask.GetMask("Tile"));
+            
+            Physics.Raycast(ray, out towerGhostHitInfo, Mathf.Infinity,layer);
             if (towerGhostHitInfo.transform != null)
             {
-                towerGhost = Instantiate(prefab, towerGhostHitInfo.point + halfPrefabHeight, Quaternion.identity);
+                towerGhost = Instantiate(prefab, towerGhostHitInfo.point + halfPrefabHeight, Quaternion.identity, GameObject.Find("Environment").transform.Find("GhostStructures"));
                 towerGhost.tag = "Untagged";
+                towerGhost.layer = 2;
+                towerGhost.GetComponent<Collider>().isTrigger = true;
                 Destroy(towerGhost.GetComponent<StructureBase>());
                 Destroy(towerGhost.GetComponent<NavMeshObstacle>());
             }
@@ -292,20 +344,38 @@ public class PlayerDetails : MonoBehaviour
         else
         {
             Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
-            Physics.Raycast(ray, out towerGhostHitInfo, LayerMask.GetMask("Tile"));
+            Physics.Raycast(ray, out towerGhostHitInfo, Mathf.Infinity, layer);
             if (towerGhostHitInfo.transform != null)
             {
                 towerGhost.transform.position = towerGhostHitInfo.point + halfPrefabHeight;
-                towerGhost.GetComponent<Renderer>().enabled = true;
-                if (Input.GetKeyUp(KeyCode.Mouse0))
+                towerGhost.transform.position = GridGenerator.Instance.PositionSnapToGrid(towerGhost.transform.position);
+                var collisions = Physics.OverlapBox(towerGhost.transform.position, towerGhost.GetComponent<Collider>().bounds.extents*0.5f);
+                List<Collider> actualCollisions = new List<Collider>();
+                foreach(Collider collider in collisions)
                 {
-                    Destroy(towerGhost);
-                    return true;
+                    if (collider.gameObject.layer != LayerMask.NameToLayer("Terrain") && collider != towerGhost.GetComponent<Collider>())
+                    {
+                        actualCollisions.Add(collider);
+                    }
+                }
+
+                if (actualCollisions.Count <= 0)
+                {
+                    towerGhost.GetComponent<Renderer>().material = canPlaceMaterial;
+                    if (Input.GetKeyUp(KeyCode.Mouse0))
+                    {
+                        Destroy(towerGhost);
+                        return true;
+                    }
+                }
+                else
+                {
+                    towerGhost.GetComponent<Renderer>().material = cannotPlaceMaterial;
                 }
             }
             else
             {
-                towerGhost.GetComponent<Renderer>().enabled = false;
+                towerGhost.GetComponent<Renderer>().material = cannotPlaceMaterial;
             }
         }
         return false;

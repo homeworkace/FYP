@@ -2,6 +2,7 @@
 using UnityEngine;
 using UnityEngine.Experimental.XR;
 using UnityEngine.XR.ARFoundation;
+using Photon.Pun;
 
 /// <summary>
 /// Moves the ARSessionOrigin in such a way that it makes the given content appear to be
@@ -49,11 +50,11 @@ public class MakeAppearOnPlane : MonoBehaviour
 
     private void Start()
     {
-        CreateEnvironment();
-        //Test
-        ScaleController r = GetComponent<ScaleController>();
-        r.scaleValue = 50;
-        //Test
+        //CreateEnvironment();
+        ////Test
+        //ScaleController r = GetComponent<ScaleController>();
+        //r.scaleValue = 50;
+        ////Test
     }
 
     void Update()
@@ -85,7 +86,21 @@ public class MakeAppearOnPlane : MonoBehaviour
         {
             Destroy(visual);
         }
-        GameManager.Instance.SpawnPlayer();
+
+        FACTION newFaction = FACTION.BLUE;
+        if (PhotonNetwork.OfflineMode == false)
+        newFaction += PhotonNetwork.LocalPlayer.ActorNumber - 1;
+
+        if (newFaction == FACTION.BLUE)
+        {
+
+        }
+        else if (newFaction == FACTION.ORANGE)
+        {
+            GetComponent<RotationController>().rotationalValue = 180;
+        }
+
+        GameManager.Instance.SpawnPlayer(newFaction);
         createdEnvironment = true;
         Destroy(planeManager);
     }

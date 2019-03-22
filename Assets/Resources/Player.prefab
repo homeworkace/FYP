@@ -46,6 +46,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   faction: 0
   currClickState: 0
+  money: 0
+  evolve_points: 0
   selectedUnits: []
   mouseDragSkin:
     m_Name: 
@@ -115,6 +117,10 @@ MonoBehaviour:
     m_StretchWidth: 1
     m_StretchHeight: 1
   clickDragZone: 1.3
+  canPlaceMaterial: {fileID: 2100000, guid: d1c6532ccbd8c2a4da787922e0f8c019, type: 2}
+  cannotPlaceMaterial: {fileID: 2100000, guid: 65804083de2115c408243e63c352ecb6, type: 2}
+  buildingType: 
+  harvestAmount: 0
 --- !u!114 &3283434271348084530
 MonoBehaviour:
   m_ObjectHideFlags: 0

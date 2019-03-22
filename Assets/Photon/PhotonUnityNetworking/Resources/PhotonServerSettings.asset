@@ -38,5 +38,11 @@ MonoBehaviour:
   - RPC_Hit
   - RPC_DamageEnemy
   - RPC_GetDamaged
+  - ShootBullet
+  - DestroyBullet
+  - InitializeBulletData
+  - CreateDeathEffect
+  - RPCCreateDeathParticles
+  - RPCCreateExplosionParticles
   DisableAutoOpenWizard: 1
   ShowSettings: 0

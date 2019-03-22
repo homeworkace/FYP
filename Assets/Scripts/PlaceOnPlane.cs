@@ -47,7 +47,17 @@ public class PlaceOnPlane : MonoBehaviour
         {
             Destroy(visual);
         }
-        GameManager.Instance.SpawnPlayer();
+        var playerObjects = GameObject.FindGameObjectsWithTag("Player");
+        FACTION newFaction = FACTION.NEUTRAL;
+        if (playerObjects.Length == 0)
+        {
+            newFaction = FACTION.BLUE;
+        }
+        else if (playerObjects.Length == 1)
+        {
+            newFaction = FACTION.ORANGE;
+        }
+        GameManager.Instance.SpawnPlayer(newFaction);
         Destroy(this);
     }
 
@@ -75,7 +85,17 @@ public class PlaceOnPlane : MonoBehaviour
                 {
                     Destroy(visual);
                 }
-                GameManager.Instance.SpawnPlayer();
+                var playerObjects = GameObject.FindGameObjectsWithTag("Player");
+                FACTION newFaction = FACTION.NEUTRAL;
+                if (playerObjects.Length == 0)
+                {
+                    newFaction = FACTION.BLUE;
+                }
+                else if (playerObjects.Length == 1)
+                {
+                    newFaction = FACTION.ORANGE;
+                }
+                GameManager.Instance.SpawnPlayer(newFaction);
                 Destroy(this);
             }
             else
